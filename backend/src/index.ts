@@ -16,9 +16,6 @@ import qnaRoutes from "./routes/qnaRoutes";
 import favoriteRoutes from "./routes/favoriteRoutes"; 
 
 
-
-
-
 import { errorHandler, notFound } from './middleware/errorHandler'
 import { seedFAQs } from './services/seedService'
 
@@ -51,13 +48,6 @@ app.use("/api/favorites", favoriteRoutes);
 app.use("/api/community", communityRoutes)
 
 
-// Health check endpoint
-app.get("/api/health", (req, res) =>
-  res.json({ ok: true, ts: Date.now() })
-)
-
-
-
 // Global error handling middleware - must be the last middleware
 app.use(errorHandler)
 
@@ -66,6 +56,7 @@ app.use(notFound)
 
 // Global error handling middleware - must be the last middleware
 app.use(errorHandler)
+app.get("/api/health", (req, res) => res.json({ ok: true, ts: Date.now() }));
 
 async function start() {
   try {
