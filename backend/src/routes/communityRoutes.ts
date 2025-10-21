@@ -264,52 +264,49 @@ router.post('/discussions/:id/replies', verifyAccessToken, async (req: Authentic
 
 // POST /api/community/vote - Toggle vote on discussion or reply (protected)
 router.post('/vote', verifyAccessToken, async (req: AuthenticatedRequest, res: Response) => {
+  //console.log("--- Entering /vote handler ---"); // Log entry
   try {
+ //   console.log("Received vote request body:", req.body);
     const { targetId, targetType, voteType } = req.body;
     const userId = req.userId;
 
+  //  console.log("User ID from token:", userId); // Log userId
+
     if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required'
-      });
+    //  console.log("Validation Failed: No userId"); // Log failure reason
+      return res.status(401).json({ /* ... */ });
     }
+
+    // Log the values before validation
+   // console.log("Validating vote data:", { targetId, targetType, voteType }); 
 
     // Validation
     if (!targetId || !targetType || !voteType) {
-      return res.status(400).json({
-        success: false,
-        message: 'Target ID, type, and vote type are required'
-      });
+   //   console.log("Validation Failed: Missing required fields"); // Log failure reason
+      return res.status(400).json({ /* ... */ });
     }
 
     if (!['discussion', 'reply'].includes(targetType)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid target type'
-      });
+    //  console.log("Validation Failed: Invalid targetType:", targetType); // Log failure reason
+      return res.status(400).json({ /* ... */ });
     }
 
     if (!['upvote', 'downvote'].includes(voteType)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid vote type'
-      });
+    //  console.log("Validation Failed: Invalid voteType:", voteType); // Log failure reason
+      return res.status(400).json({ /* ... */ });
     }
-    // @ts-ignore
+
+  //  console.log("Validation Passed. Calling Vote.toggleVote..."); // Log success
 
     const result = await Vote.toggleVote(userId, targetId, targetType, voteType);
 
-    res.json({
-      success: true,
-      data: result
-    });
+   // console.log("Vote.toggleVote result:", result); // Log result
+    res.json({ success: true, data: result });
+
   } catch (error) {
-    console.error('Error toggling vote:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to process vote'
-    });
+    // Log the error from inside toggleVote if it occurs
+    console.error('Error inside /vote handler:', error); 
+    res.status(500).json({ success: false, message: 'Failed to process vote' });
   }
 });
 

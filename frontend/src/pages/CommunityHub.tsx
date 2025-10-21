@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import type { Discussion, CommunityFilter } from '../types/Community';
 import { DEFAULT_CATEGORIES } from '../constants/community';
-import { mockDiscussions } from '../__mocks__/communityData';
+// Import the real API functions
+import { getDiscussions, createDiscussion } from '../services/api';
 import SearchFilterBar from '../components/Community/SearchFilterBar';
 import DiscussionCard from '../components/Community/DiscussionCard';
 import CreateThreadModal from '../components/Community/CreateThreadModal';
@@ -14,36 +15,48 @@ const CommunityHub: React.FC = () => {
   });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null); // State for error handling
 
-  // Mock data for development - replace with API call
+  // Define fetchDiscussions function outside useEffect so it can be reused
+  const fetchDiscussions = async () => {
+    try {
+      setLoading(true); // Set loading before the request
+      const response = await getDiscussions();
+      // Ensure you access the data correctly based on your API response structure
+      setDiscussions(response.data.data.discussions || []);
+      setError(null); // Clear any previous errors on success
+    } catch (err) {
+      setError('Failed to fetch discussions. Please try again later.');
+      console.error(err);
+      setDiscussions([]); // Clear discussions on error
+    } finally {
+      setLoading(false); // Set loading false after request finishes (success or fail)
+    }
+  };
+
+  // useEffect now calls the fetchDiscussions function on component mount
   useEffect(() => {
-    // Simulate API delay
-    setTimeout(() => {
-      setDiscussions(mockDiscussions);
-      setLoading(false);
-    }, 800);
-  }, []);
+    fetchDiscussions();
+  }, []); // Empty dependency array means this runs only once
 
+  // --- Filtering Logic (Keep your existing code) ---
   const filteredDiscussions = discussions.filter((discussion: Discussion) => {
     if (filter.category && discussion.category.id !== filter.category) {
       return false;
     }
-    
     if (filter.searchQuery) {
       const query = filter.searchQuery.toLowerCase();
       return discussion.title.toLowerCase().includes(query) ||
              discussion.content.toLowerCase().includes(query) ||
              discussion.tags?.some((tag: string) => tag.toLowerCase().includes(query));
     }
-    
     return true;
   });
 
+  // --- Sorting Logic (Keep your existing code) ---
   const sortedDiscussions = [...filteredDiscussions].sort((a, b) => {
-    // Pinned posts always come first
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
-    
     switch (filter.sortBy) {
       case 'popular':
         return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes);
@@ -57,16 +70,32 @@ const CommunityHub: React.FC = () => {
     }
   });
 
-  const handleCreateThread = (threadData: any) => {
-    // TODO: Implement API call to create new thread
-    console.log('Creating thread:', threadData);
+  // Update this function in CommunityHub.tsx
+const handleCreateThread = async (threadData: { title: string; content: string; categoryId: string; tags: string[] }) => {
+  try {
+    // Pass the entire threadData object
+    await createDiscussion(threadData);
     setIsCreateModalOpen(false);
-  };
+    fetchDiscussions(); // Refresh the list
+  } catch (err) {
+    console.error("Failed to create discussion:", err);
+    alert('Failed to create discussion. Please check the details and try again.');
+  }
+};
+
+  // Display error message if the initial fetch fails
+  if (error && discussions.length === 0) { // Check discussions length to avoid hiding the page on create/vote errors
+    return (
+      <div className="min-h-screen bg-background dark:bg-darkbg flex items-center justify-center">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background dark:bg-darkbg text-text dark:text-white transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Header Section */}
+        {/* Header Section (Keep existing JSX) */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -87,7 +116,7 @@ const CommunityHub: React.FC = () => {
           </div>
         </div>
 
-        {/* Search and Filter Bar */}
+        {/* Search and Filter Bar (Keep existing JSX) */}
         <div className="mb-8">
           <SearchFilterBar
             filter={filter}
@@ -96,7 +125,7 @@ const CommunityHub: React.FC = () => {
           />
         </div>
 
-        {/* Statistics Cards */}
+        {/* Statistics Cards (Keep existing JSX, but data source is now real) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-soft">
             <div className="text-2xl font-bold text-primary">{discussions.length}</div>
@@ -125,7 +154,7 @@ const CommunityHub: React.FC = () => {
         {/* Discussion List */}
         <div className="space-y-4">
           {loading ? (
-            // Loading skeleton
+            // Loading skeleton (Keep existing JSX)
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-soft animate-pulse">
@@ -145,10 +174,12 @@ const CommunityHub: React.FC = () => {
               ))}
             </div>
           ) : sortedDiscussions.length > 0 ? (
-            sortedDiscussions.map((discussion) => (
-              <DiscussionCard 
-                key={discussion.id} 
+                sortedDiscussions.map((discussion, index) => ( // Add 'index' here
+                <DiscussionCard
+                key={discussion.id || `discussion-${index}`} // Use index as a fallback if id is missing
                 discussion={discussion}
+                // Pass fetchDiscussions as the prop for refreshing after a vote
+                onVoteSuccess={fetchDiscussions}
                 onDiscussionClick={(discussion) => {
                   // TODO: Navigate to discussion detail page
                   console.log('Discussion clicked:', discussion.id);
@@ -156,14 +187,15 @@ const CommunityHub: React.FC = () => {
               />
             ))
           ) : (
+            // No discussions found message (Keep existing JSX)
             <div className="bg-white dark:bg-gray-800 rounded-lg p-12 shadow-soft text-center">
               <div className="text-6xl mb-4">🔍</div>
               <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
                 No discussions found
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                {filter.searchQuery || filter.category 
-                  ? "Try adjusting your search or filter criteria" 
+                {filter.searchQuery || filter.category
+                  ? "Try adjusting your search or filter criteria"
                   : "Be the first to start a discussion!"
                 }
               </p>
@@ -179,7 +211,7 @@ const CommunityHub: React.FC = () => {
           )}
         </div>
 
-        {/* Pagination (for future implementation) */}
+        {/* Pagination (Keep existing JSX) */}
         {sortedDiscussions.length > 0 && (
           <div className="flex justify-center mt-8">
             <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -189,7 +221,7 @@ const CommunityHub: React.FC = () => {
         )}
       </div>
 
-      {/* Create Thread Modal */}
+      {/* Create Thread Modal (Keep existing JSX) */}
       <CreateThreadModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
