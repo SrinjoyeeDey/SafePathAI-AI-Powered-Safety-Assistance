@@ -32,8 +32,10 @@ const ContactOwner: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-4 justify-center lg:justify-start">
-              <a href={socials.github || '#'} onClick={(e) => { if (!socials.github) e.preventDefault(); }} className="text-2xl hover:opacity-90"><FaGithub /></a>
-              <a href={socials.linkedin || '#'} onClick={(e) => { if (!socials.linkedin) e.preventDefault(); }} className="text-2xl hover:opacity-90"><FaLinkedin /></a>
+              <a href={socials.github || 'https://github.com/SrinjoyeeDey'}  className="text-2xl hover:opacity-90"><FaGithub /></a>
+              <a href={socials.linkedin || 'https://www.linkedin.com/in/srinjoyee-dey'} className="text-2xl hover:opacity-90"><FaLinkedin /></a>
+              <a href={socials.twitter || 'https://x.com/Tinnii_dey'} className="text-2xl hover:opacity-90"><FaTwitter /></a>
+
             </div>
           </div>
 
@@ -118,15 +120,15 @@ const ContactOwner: React.FC = () => {
                 <FaEnvelope className="text-primary" /> <span>Email</span>
               </a>
 
-              <a href={socials.twitter || '#'} onClick={(e) => { if (!socials.twitter) e.preventDefault(); }} className="flex items-center gap-2 px-3 py-2 border rounded-md">
+              <a href={socials.twitter || 'https://x.com/Tinnii_dey'} className="flex items-center gap-2 px-3 py-2 border rounded-md">
                 <FaTwitter className="text-blue-400" /> <span>Twitter</span>
               </a>
 
-              <a href={socials.github || '#'} onClick={(e) => { if (!socials.github) e.preventDefault(); }} className="flex items-center gap-2 px-3 py-2 border rounded-md">
+              <a href={socials.github || 'https://github.com/SrinjoyeeDey'} className="flex items-center gap-2 px-3 py-2 border rounded-md">
                 <FaGithub /> <span>GitHub</span>
               </a>
 
-              <a href={socials.linkedin || '#'} onClick={(e) => { if (!socials.linkedin) e.preventDefault(); }} className="flex items-center gap-2 px-3 py-2 border rounded-md">
+              <a href={socials.linkedin || 'https://www.linkedin.com/in/srinjoyee-dey'}  className="flex items-center gap-2 px-3 py-2 border rounded-md">
                 <FaLinkedin className="text-blue-600" /> <span>LinkedIn</span>
               </a>
             </div>

@@ -176,9 +176,9 @@ const Footer: React.FC = () => {
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Follow us:</p>
               <div className="flex space-x-3">
                 {[
-                  { icon: FaTwitter, href: 'https://twitter.com/safepath_ai', label: 'Twitter' },
-                  { icon: FaGithub, href: 'https://github.com/SrinjoyeeDey/SafePathAI-AI-Powered-Safety-Assistance', label: 'GitHub' },
-                  { icon: FaLinkedin, href: 'https://linkedin.com/company/safepath-ai', label: 'LinkedIn' }
+                  { icon: FaTwitter, href: 'https://x.com/Tinnii_dey', label: 'Twitter' },
+                  { icon: FaGithub, href: 'https://github.com/SrinjoyeeDey', label: 'GitHub' },
+                  { icon: FaLinkedin, href: 'https://www.linkedin.com/in/srinjoyee-dey', label: 'LinkedIn' }
                 ].map((social) => (
                   <a
                     key={social.label}
