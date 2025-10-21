@@ -21,17 +21,18 @@ interface Favorite {
 }
 
 const Favorites = () => {
-
-   useEffect(() => {
-      document.title = "Favourites | SafePathAI";
-    }, []);
-
   const [contacts, setContacts] = useState<Favorite[]>([]);
   const [form, setForm] = useState({ name: "", phone: "", email: "" });
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
 
+  // Set page title
+  useEffect(() => {
+    document.title = "Favourites | SafePathAI";
+  }, []);
+
+  // Fetch contacts function
   const fetchContacts = async () => {
     try {
       const res = await api.get("/favorites");
@@ -43,12 +44,33 @@ const Favorites = () => {
     }
   };
 
+  // Fetch contacts on mount
   useEffect(() => {
-    fetchContacts();
+    let mounted = true;
+    const fetchData = async () => {
+      try {
+        const res = await api.get("/favorites");
+        if (mounted) {
+          setContacts(res.data);
+          setError(null);
+        }
+      } catch (err: any) {
+        if (mounted) {
+          setError(err.response?.data?.message || "Failed to load favorites");
+        }
+      }
+    };
+    fetchData();
+    return () => { mounted = false; };
   }, []);
 
+  // Add new contact
   const addContact = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.name.trim() || !form.phone.trim()) {
+      alert("Name and phone are required.");
+      return;
+    }
     try {
       await api.post("/favorites", form);
       setForm({ name: "", phone: "", email: "" });
@@ -60,10 +82,14 @@ const Favorites = () => {
     }
   };
 
+  // Update existing contact
   const updateContact = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingId) return;
-    
+    if (!form.name.trim() || !form.phone.trim()) {
+      alert("Name and phone are required.");
+      return;
+    }
     try {
       await api.put(`/favorites/${editingId}`, form);
       setForm({ name: "", phone: "", email: "" });
@@ -75,14 +101,13 @@ const Favorites = () => {
     }
   };
 
+  // Delete contact
   const deleteContact = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this contact?")) {
-      return;
-    }
-    
+    if (!window.confirm("Are you sure you want to delete this contact?")) return;
     try {
       await api.delete(`/favorites/${id}`);
-      fetchContacts();
+      // Update local state instead of refetch
+      setContacts(prev => prev.filter(c => c._id !== id));
     } catch (err: any) {
       console.error("Error deleting favorite:", err.response || err.message);
       alert("Failed to delete contact");
@@ -108,7 +133,7 @@ const Favorites = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
-        {/* Header Section */}
+        {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <div className="p-3 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full">
@@ -123,14 +148,14 @@ const Favorites = () => {
           </p>
         </div>
 
-        {/* Error Message */}
+        {/* Error */}
         {error && (
           <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 rounded-lg backdrop-blur-sm">
             <p className="text-red-700 dark:text-red-300 text-center font-medium">{error}</p>
           </div>
         )}
 
-        {/* Add Contact Button */}
+        {/* Add Button */}
         {!isAdding && !editingId && (
           <div className="mb-6 flex justify-center">
             <button
@@ -143,7 +168,7 @@ const Favorites = () => {
           </div>
         )}
 
-        {/* Add/Edit Contact Form - Glassmorphism */}
+        {/* Add/Edit Form */}
         {(isAdding || editingId) && (
           <div className="mb-8 p-6 bg-white/40 dark:bg-gray-800/40 rounded-2xl backdrop-blur-xl backdrop-saturate-150 border border-white/50 dark:border-gray-700/50 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
@@ -160,7 +185,7 @@ const Favorites = () => {
             </div>
 
             <form onSubmit={editingId ? updateContact : addContact} className="space-y-5">
-              {/* Name Input - Glassmorphism */}
+              {/* Name */}
               <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Full Name *
@@ -180,7 +205,7 @@ const Favorites = () => {
                 </div>
               </div>
 
-              {/* Phone Input - Glassmorphism */}
+              {/* Phone */}
               <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Phone Number *
@@ -200,7 +225,7 @@ const Favorites = () => {
                 </div>
               </div>
 
-              {/* Email Input - Glassmorphism */}
+              {/* Email */}
               <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Email Address (Optional)
@@ -239,9 +264,8 @@ const Favorites = () => {
           </div>
         )}
 
-        {/* Contacts List */}
+        {/* Contact List */}
         {contacts.length === 0 ? (
-          // Empty State
           <div className="text-center py-16 px-4">
             <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30 rounded-full mb-6">
               <FaStar className="w-12 h-12 text-purple-600 dark:text-purple-400" />
@@ -249,18 +273,6 @@ const Favorites = () => {
             <h3 className="text-2xl font-semibold text-gray-800 dark:text-white mb-3">
               No Favorite Contacts Yet
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-              Start building your emergency contact list by adding your first favorite contact. Keep your loved ones close at hand.
-            </p>
-            {!isAdding && (
-              <button
-                onClick={() => setIsAdding(true)}
-                className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-300 hover:scale-105 hover:shadow-xl transform"
-              >
-                <FaPlus className="w-5 h-5" />
-                <span>Add Your First Contact</span>
-              </button>
-            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -269,7 +281,6 @@ const Favorites = () => {
                 key={contact._id}
                 className="group p-6 bg-white/40 dark:bg-gray-800/40 rounded-2xl backdrop-blur-xl backdrop-saturate-150 border border-white/50 dark:border-gray-700/50 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] transform"
               >
-                {/* Contact Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
@@ -279,39 +290,27 @@ const Favorites = () => {
                       <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
                         {contact.name}
                       </h3>
-                      <div className="flex items-center space-x-1">
-                        <FaHeart className="w-3 h-3 text-pink-500" />
-                        <span className="text-xs text-gray-500 dark:text-gray-400">Favorite</span>
-                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Contact Details */}
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center space-x-3 text-gray-700 dark:text-gray-300">
                     <FaPhone className="w-4 h-4 text-purple-500 dark:text-purple-400 flex-shrink-0" />
-                    <a 
-                      href={`tel:${contact.phone}`}
-                      className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200"
-                    >
+                    <a href={`tel:${contact.phone}`} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200">
                       {contact.phone}
                     </a>
                   </div>
                   {contact.email && (
                     <div className="flex items-center space-x-3 text-gray-700 dark:text-gray-300">
                       <FaEnvelope className="w-4 h-4 text-purple-500 dark:text-purple-400 flex-shrink-0" />
-                      <a 
-                        href={`mailto:${contact.email}`}
-                        className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200 truncate"
-                      >
+                      <a href={`mailto:${contact.email}`} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200 truncate">
                         {contact.email}
                       </a>
                     </div>
                   )}
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex space-x-2 pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
                   <button
                     onClick={() => startEditing(contact)}
