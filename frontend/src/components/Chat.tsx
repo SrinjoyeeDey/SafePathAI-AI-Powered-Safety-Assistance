@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FaRobot, FaPaperPlane } from "react-icons/fa";
+import { formatResponse } from "../utils/ChatResponseMap";
+import { useLocation } from "../context/LocationContext";
 
 interface Message {
   id: number;
@@ -11,6 +13,9 @@ interface Message {
 const Chat: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [geoLocationError, setGeoLocationError] = useState(false);
+  const {  setShowLocationModal } = useLocation();
+  
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -88,6 +93,7 @@ const Chat: React.FC = () => {
           text: `I can't access your location. (Error: ${error.message})`,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         };
+        setGeoLocationError(true);
         setMessages((prev) => [...prev, errorMsg]);
       },
      
@@ -107,7 +113,7 @@ const Chat: React.FC = () => {
       </button>
 
       {open && (
-        <div className="fixed bottom-20 right-6 w-80 md:w-96 h-96 bg-gray-50 dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col overflow-hidden z-50">
+        <div className="fixed bottom-20 right-6 w-80 md:w-96 h-[65%] bg-gray-50 dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col overflow-hidden z-50">
           {/* ... The rest of your JSX code remains the same ... */}
           <div className="bg-primary text-white p-3 flex justify-between items-center">
             <span className="font-semibold">AI Assistant</span>
@@ -133,8 +139,13 @@ const Chat: React.FC = () => {
                       : "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-tl-none"
                   }`}
                 >
-                  <p className="text-sm">{msg.text}</p>
-                  <span className="text-xs text-gray-400 mt-1 block text-right">
+                  {
+                      msg.sender === "user" ? <p className="text-sm">{msg.text}</p> : <div 
+                  className="prose prose-sm md:prose-base max-w-none" 
+                  dangerouslySetInnerHTML={formatResponse(msg.text)} 
+                  />
+                  }
+                  <span className={`text-xs ${msg.sender === "user"?'text-white':'text-gray-400'} mt-1 block text-right`}>
                     {msg.timestamp}
                   </span>
                 </div>
@@ -142,6 +153,22 @@ const Chat: React.FC = () => {
             ))}
             <div ref={messagesEndRef} />
           </div>
+          {
+            geoLocationError && (
+              <div className="bg-red-100 text-red-700 p-2 text-center text-sm">
+                Unable to access your location. Please enable location services for better assistance.
+                <button
+                  onClick={() => {
+                    setGeoLocationError(false);
+                    setShowLocationModal(true);
+                  }}
+                  className="underline font-semibold ml-1"
+                >
+                  Set Location
+                </button>
+              </div>
+            )
+          }
           <div className="p-3 bg-gray-100 dark:bg-gray-700 flex items-center space-x-2">
             <input
               type="text"
