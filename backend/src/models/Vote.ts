@@ -35,7 +35,7 @@ voteSchema.statics.toggleVote = async function(userId: string, targetId: string,
   if (existingVote) {
     if (existingVote.voteType === voteType) {
       // Remove vote if clicking the same vote type
-      await existingVote.remove();
+      await existingVote.deleteOne();
       await this.updateTargetVoteCounts(targetId, targetType);
       return { action: 'removed', vote: null };
     } else {

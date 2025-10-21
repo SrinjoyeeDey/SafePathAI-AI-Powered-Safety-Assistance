@@ -1,33 +1,42 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { Discussion } from '../../types/Community';
+import { postVote } from '../../services/api';
 import UserAvatar from './UserAvatar';
 import { formatTimeAgo } from '../../utils/formatters';
 
 interface DiscussionCardProps {
   discussion: Discussion;
   onDiscussionClick?: (discussion: Discussion) => void;
+  onVoteSuccess: () => void;
 }
 
-const DiscussionCard: React.FC<DiscussionCardProps> = ({ 
-  discussion, 
-  onDiscussionClick 
-}: DiscussionCardProps) => {
-  const [isUpvoted, setIsUpvoted] = useState(false);
-  const [isDownvoted, setIsDownvoted] = useState(false);
+const DiscussionCard: React.FC<DiscussionCardProps> = ({
+  discussion,
+  onDiscussionClick,
+  onVoteSuccess
+}:
+  DiscussionCardProps) => {
+ const handleUpvote = async (e: React.MouseEvent) => {
+  e.stopPropagation();
+  try {
+   // console.log("Voting Up - Discussion ID:", discussion._id); // Use _id
+    await postVote(discussion._id, 'up'); // Use _id
+    onVoteSuccess();
+  } catch (err) {
+    console.error("Failed to upvote:", err);
+  }
+};
 
-  const handleUpvote = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isDownvoted) setIsDownvoted(false);
-    setIsUpvoted(!isUpvoted);
-    // TODO: API call to update vote
-  };
-
-  const handleDownvote = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isUpvoted) setIsUpvoted(false);
-    setIsDownvoted(!isDownvoted);
-    // TODO: API call to update vote
-  };
+  const handleDownvote = async (e: React.MouseEvent) => {
+  e.stopPropagation();
+  try {
+   // console.log("Voting Down - Discussion ID:", discussion._id); // Use _id
+    await postVote(discussion._id, 'down'); // Use _id
+    onVoteSuccess();
+  } catch (err) {
+    console.error("Failed to downvote:", err);
+  }
+};
 
   const handleCardClick = () => {
     if (onDiscussionClick) {
@@ -35,15 +44,17 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
     }
   };
 
-  const netScore = discussion.upvotes - discussion.downvotes + (isUpvoted ? 1 : 0) - (isDownvoted ? 1 : 0);
+  const netScore = discussion.upvotes - discussion.downvotes;
+
+  const createdAtDate = new Date(discussion.createdAt);
+  const updatedAtDate = new Date(discussion.updatedAt);
 
   return (
-    <div 
+    <div
       className="bg-white dark:bg-gray-800 rounded-lg shadow-soft hover:shadow-lg transition-shadow duration-200 cursor-pointer"
       onClick={handleCardClick}
     >
       <div className="p-6">
-        {/* Header with pinned indicator */}
         {discussion.isPinned && (
           <div className="flex items-center mb-3">
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
@@ -52,34 +63,27 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
           </div>
         )}
 
+
         {/* Main Content */}
         <div className="flex items-start space-x-4">
           {/* Vote Section */}
           <div className="flex flex-col items-center space-y-1 min-w-[3rem]">
             <button
               onClick={handleUpvote}
-              className={`p-1 rounded-md transition-colors ${
-                isUpvoted
-                  ? 'text-primary bg-primary/10'
-                  : 'text-gray-400 hover:text-primary hover:bg-primary/5'
-              }`}
+              className="p-1 rounded-md transition-colors text-gray-400 hover:text-primary hover:bg-primary/5"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 3l7 7h-4v7H7v-7H3l7-7z" clipRule="evenodd" />
               </svg>
             </button>
-            
+
             <span className={`text-sm font-medium ${netScore > 0 ? 'text-primary' : netScore < 0 ? 'text-red-500' : 'text-gray-500'}`}>
               {netScore}
             </span>
-            
+
             <button
               onClick={handleDownvote}
-              className={`p-1 rounded-md transition-colors ${
-                isDownvoted
-                  ? 'text-red-500 bg-red-50 dark:bg-red-900/20'
-                  : 'text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
-              }`}
+              className="p-1 rounded-md transition-colors text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 17l-7-7h4V3h6v7h4l-7 7z" clipRule="evenodd" />
@@ -88,11 +92,12 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
           </div>
 
           {/* Content Section */}
+
           <div className="flex-1 min-w-0">
             {/* Author and Meta Info */}
             <div className="flex items-center space-x-3 mb-3">
-              <UserAvatar 
-                name={discussion.author.name} 
+              <UserAvatar
+                name={discussion.author.name}
                 avatar={discussion.author.avatar}
                 size="sm"
               />
@@ -101,8 +106,9 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
                   {discussion.author.name}
                 </span>
                 <span>•</span>
-                <time dateTime={discussion.createdAt.toISOString()}>
-                  {formatTimeAgo(discussion.createdAt)}
+                {/* Use the new Date object */}
+                <time dateTime={createdAtDate.toISOString()}>
+                  {formatTimeAgo(createdAtDate)} {/* Pass Date object or string as needed by formatTimeAgo */}
                 </time>
                 <span>•</span>
                 <span className="flex items-center">
@@ -165,7 +171,7 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>Last activity {formatTimeAgo(discussion.updatedAt)}</span>
+               <span>Last activity {formatTimeAgo(updatedAtDate)}</span>
               </div>
 
               {discussion.isClosed && (
