@@ -1,32 +1,43 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { Discussion } from '../../types/Community';
 import UserAvatar from './UserAvatar';
 import { formatTimeAgo } from '../../utils/formatters';
+import { postVote } from '../../services/api';
 
 interface DiscussionCardProps {
   discussion: Discussion;
   onDiscussionClick?: (discussion: Discussion) => void;
+
+  onVoteSuccess: () => void;
 }
 
 const DiscussionCard: React.FC<DiscussionCardProps> = ({ 
   discussion, 
-  onDiscussionClick 
+  onDiscussionClick,
+  onVoteSuccess 
 }: DiscussionCardProps) => {
-  const [isUpvoted, setIsUpvoted] = useState(false);
-  const [isDownvoted, setIsDownvoted] = useState(false);
 
-  const handleUpvote = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isDownvoted) setIsDownvoted(false);
-    setIsUpvoted(!isUpvoted);
-    // TODO: API call to update vote
+  
+  const handleUpvote = async (e: React.MouseEvent) => {
+    e.stopPropagation(); 
+    try {
+      await postVote(discussion.id, 'up');
+      onVoteSuccess(); 
+    } catch (err) {
+      console.error("Failed to upvote:", err);
+    
+    }
   };
 
-  const handleDownvote = (e: React.MouseEvent) => {
+
+  const handleDownvote = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isUpvoted) setIsUpvoted(false);
-    setIsDownvoted(!isDownvoted);
-    // TODO: API call to update vote
+    try {
+      await postVote(discussion.id, 'down');
+      onVoteSuccess(); // Tell the parent component to refresh the discussions
+    } catch (err) {
+      console.error("Failed to downvote:", err);
+    }
   };
 
   const handleCardClick = () => {
@@ -35,7 +46,8 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
     }
   };
 
-  const netScore = discussion.upvotes - discussion.downvotes + (isUpvoted ? 1 : 0) - (isDownvoted ? 1 : 0);
+  // Use the score directly from the data. The parent will re-fetch and update it.
+  const netScore = discussion.upvotes - discussion.downvotes;
 
   return (
     <div 
@@ -43,7 +55,6 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
       onClick={handleCardClick}
     >
       <div className="p-6">
-        {/* Header with pinned indicator */}
         {discussion.isPinned && (
           <div className="flex items-center mb-3">
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
@@ -52,17 +63,12 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
           </div>
         )}
 
-        {/* Main Content */}
         <div className="flex items-start space-x-4">
           {/* Vote Section */}
           <div className="flex flex-col items-center space-y-1 min-w-[3rem]">
             <button
               onClick={handleUpvote}
-              className={`p-1 rounded-md transition-colors ${
-                isUpvoted
-                  ? 'text-primary bg-primary/10'
-                  : 'text-gray-400 hover:text-primary hover:bg-primary/5'
-              }`}
+              className="text-gray-400 hover:text-primary hover:bg-primary/5 p-1 rounded-md transition-colors"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 3l7 7h-4v7H7v-7H3l7-7z" clipRule="evenodd" />
@@ -75,11 +81,7 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
             
             <button
               onClick={handleDownvote}
-              className={`p-1 rounded-md transition-colors ${
-                isDownvoted
-                  ? 'text-red-500 bg-red-50 dark:bg-red-900/20'
-                  : 'text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
-              }`}
+              className="text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded-md transition-colors"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 17l-7-7h4V3h6v7h4l-7 7z" clipRule="evenodd" />
@@ -87,9 +89,8 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
             </button>
           </div>
 
-          {/* Content Section */}
+          
           <div className="flex-1 min-w-0">
-            {/* Author and Meta Info */}
             <div className="flex items-center space-x-3 mb-3">
               <UserAvatar 
                 name={discussion.author.name} 
@@ -111,7 +112,6 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
               </div>
             </div>
 
-            {/* Title and Category */}
             <div className="mb-3">
               <div className="flex items-start justify-between mb-2">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2 pr-4">
@@ -133,7 +133,6 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
               </p>
             </div>
 
-            {/* Tags */}
             {discussion.tags && discussion.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-3">
                 {discussion.tags.slice(0, 3).map((tag, index) => (
@@ -152,7 +151,6 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
               </div>
             )}
 
-            {/* Footer Stats */}
             <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
               <div className="flex items-center space-x-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

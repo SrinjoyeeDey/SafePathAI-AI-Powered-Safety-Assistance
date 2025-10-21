@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Discussion, CommunityFilter } from '../types/Community';
 import { DEFAULT_CATEGORIES } from '../constants/community';
-import { mockDiscussions } from '../__mocks__/communityData';
+import { getDiscussions, createDiscussion } from '../services/api'; 
 import SearchFilterBar from '../components/Community/SearchFilterBar';
 import DiscussionCard from '../components/Community/DiscussionCard';
 import CreateThreadModal from '../components/Community/CreateThreadModal';
@@ -12,16 +12,29 @@ const CommunityHub: React.FC = () => {
     sortBy: 'latest',
     timeRange: 'all'
   });
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-  // Mock data for development - replace with API call
-  useEffect(() => {
-    // Simulate API delay
-    setTimeout(() => {
-      setDiscussions(mockDiscussions);
+
+ 
+  
+  const fetchDiscussions = async () => {
+    try {
+      setLoading(true);
+      const response = await getDiscussions();
+      setDiscussions(response.data.data.discussions);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch discussions. Please try again.');
+      console.error(err);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchDiscussions();
   }, []);
 
   const filteredDiscussions = discussions.filter((discussion: Discussion) => {
@@ -57,11 +70,22 @@ const CommunityHub: React.FC = () => {
     }
   });
 
-  const handleCreateThread = (threadData: any) => {
-    // TODO: Implement API call to create new thread
-    console.log('Creating thread:', threadData);
-    setIsCreateModalOpen(false);
+  const handleCreateThread = async (threadData: { title: string; content: string; }) => {
+    try {
+      await createDiscussion(threadData.title, threadData.content);
+      fetchDiscussions(); // Re-fetch discussions after creating a new one
+    } catch (err) {
+      console.error("Failed to create discussion:", err);
+    }
   };
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background dark:bg-darkbg text-text dark:text-white transition-colors duration-300">
@@ -149,6 +173,7 @@ const CommunityHub: React.FC = () => {
               <DiscussionCard 
                 key={discussion.id} 
                 discussion={discussion}
+                onVoteSuccess={fetchDiscussions} 
                 onDiscussionClick={(discussion) => {
                   // TODO: Navigate to discussion detail page
                   console.log('Discussion clicked:', discussion.id);

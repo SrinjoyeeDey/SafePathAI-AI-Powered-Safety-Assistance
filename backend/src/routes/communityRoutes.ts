@@ -129,6 +129,7 @@ router.get('/discussions/:id', async (req: Request, res: Response) => {
 });
 
 // POST /api/community/discussions - Create new discussion (protected)
+router.post('/discussions', verifyAccessToken, async (req: AuthenticatedRequest, res: Response) => {
 router.post('/discussions',verifyAccessToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { title, content, categoryId:category, tags } = req.body;
