@@ -285,7 +285,201 @@ graph LR
 
 </div>
 
-Environment Variables
+## 🐳 Docker Setup (Recommended)
+
+<div align="center">
+
+<img src="https://readme-typing-svg.herokuapp.com/?font=Roboto&size=24&duration=3000&color=22C55E&center=true&vCenter=true&width=500&lines=🐳+Docker+Ready!;+One+Command+Setup;+Consistent+Environment;+Easy+Deployment" alt="Docker Ready" />
+
+</div>
+
+### Prerequisites for Docker
+
+<div align="left">
+
+![Docker](https://img.shields.io/badge/Docker-20.10%2B-2496ED?style=for-the-badge&logo=docker)
+![Docker Compose](https://img.shields.io/badge/Docker_Compose-2.0%2B-2496ED?style=for-the-badge&logo=docker)
+
+</div>
+
+### Quick Docker Setup
+
+<div align="left">
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/SrinjoyeeDey/SafePathAI-AI-Powered-Safety-Assistance-App.git
+cd SafePathAI-AI-Powered-Safety-Assistance-App
+
+# 2. Configure environment variables
+cp backend/env.example backend/.env
+# Edit backend/.env with your API keys
+
+# 3. Start all services with Docker Compose
+docker-compose up -d
+
+# 4. Access the application
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:4000/api
+# MongoDB: localhost:27017
+```
+
+</div>
+
+### Docker Commands Reference
+
+<div align="left">
+
+| Command | Description |
+|:---|:---|
+| `docker-compose up -d` | Start all services in background |
+| `docker-compose up` | Start all services with logs |
+| `docker-compose down` | Stop all services |
+| `docker-compose logs -f` | View logs from all services |
+| `docker-compose logs -f backend` | View backend logs only |
+| `docker-compose restart backend` | Restart backend service |
+| `docker-compose build` | Rebuild all images |
+| `docker-compose build backend` | Rebuild backend image only |
+
+</div>
+
+### Individual Service Management
+
+<div align="left">
+
+```bash
+# Build and run backend only
+cd backend
+docker build -t safepathai-backend .
+docker run -p 4000:4000 --env-file .env safepathai-backend
+
+# Build and run frontend only
+cd frontend
+docker build -t safepathai-frontend .
+docker run -p 3000:3000 safepathai-frontend
+
+# Run MongoDB only
+docker run -d -p 27017:27017 --name mongodb mongo:7.0
+```
+
+</div>
+
+### Docker Architecture
+
+<div align="center">
+
+```mermaid
+graph TB
+    subgraph "Docker Environment"
+        A[Frontend Container<br/>React + Vite + Nginx<br/>Port: 3000] 
+        B[Backend Container<br/>Node.js + Express<br/>Port: 4000]
+        C[MongoDB Container<br/>Database<br/>Port: 27017]
+    end
+    
+    subgraph "External Services"
+        D[OpenAI/Gemini API]
+        E[Mapbox API]
+        F[Twilio SMS]
+    end
+    
+    A --> B
+    B --> C
+    B --> D
+    B --> E
+    B --> F
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#e8f5e8
+```
+
+</div>
+
+### Environment Variables
+
+<div align="left">
+
+Create `.env` file in `/backend` directory:
+
+```env
+# Server Configuration
+NODE_ENV=production
+PORT=4000
+FRONTEND_URL=http://localhost:3000
+
+# Database Configuration
+MONGO_URI=mongodb://admin:password123@mongodb:27017/safepathai?authSource=admin
+
+# JWT Configuration
+JWT_ACCESS_SECRET=your_jwt_access_secret_change_this_in_production
+JWT_REFRESH_SECRET=your_jwt_refresh_secret_change_this_in_production
+
+# AI Service Configuration
+OPENAI_API_KEY=your_openai_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Map Service Configuration
+MAPBOX_API_KEY=your_mapbox_api_key_here
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+
+# Emergency Services Configuration
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE_NUMBER=your_twilio_phone_number
+```
+
+</div>
+
+### Troubleshooting Docker Setup
+
+<div align="left">
+
+**Common Issues & Solutions:**
+
+| Issue | Solution |
+|:---|:---|
+| Port already in use | Change ports in `docker-compose.yml` or stop conflicting services |
+| MongoDB connection failed | Ensure MongoDB container is healthy: `docker-compose ps` |
+| Build fails | Clear Docker cache: `docker system prune -a` |
+| Environment variables not loaded | Check `.env` file exists and has correct format |
+| Frontend can't reach backend | Verify `VITE_API_URL` in frontend environment |
+
+**Health Checks:**
+```bash
+# Check all services status
+docker-compose ps
+
+# Check service health
+curl http://localhost:4000/api/health  # Backend
+curl http://localhost:3000/health      # Frontend
+
+# View detailed logs
+docker-compose logs --tail=50 backend
+```
+
+</div>
+
+### Production Deployment
+
+<div align="left">
+
+For production deployment, consider:
+
+1. **Use production environment variables**
+2. **Enable SSL/TLS certificates**
+3. **Use external MongoDB Atlas or managed database**
+4. **Set up proper logging and monitoring**
+5. **Configure reverse proxy (nginx)**
+6. **Use Docker secrets for sensitive data**
+
+```bash
+# Production example
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+</div>
+
+Environment Variables (Manual Setup)
 
 <div align="left">
 
